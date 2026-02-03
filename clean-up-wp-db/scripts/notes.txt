@@ -1,0 +1,21 @@
+mysql -u username -p database_name < wp_cleanup_machine_optimized.sql
+
+
+cd /path/to/scripts
+chmod +x run_cleanup_batches.sh
+./run_cleanup_batches.sh
+
+
+mysql -u username -p database_name
+source /path/to/wp_cleanup_machine_optimized.sql
+
+
+
+
+
+sudo mysqldump -u root -p www_loxone_com > db_dump_stg_$(date +%Y-%m-%d_%H-%M-%S).sql
+
+
+mysql -u root -p www_loxone_com < cleaner.sql
+mysql -u root -p www_loxone_com < cleaner.sql
+

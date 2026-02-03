@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Cleanup Comparison Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(33deg, #0a3d2e 0%, #1a5c42 50%, #2d7a5f 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #69c350 0%, #1a5c42 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .summary-card h3 {
+            font-size: 0.9em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .summary-card .value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-card.positive .value {
+            color: #28a745;
+        }
+
+        .summary-card.negative .value {
+            color: #dc3545;
+        }
+
+        .summary-card.neutral .value {
+            color: #2d7a5f;
+        }
+
+        .summary-card .label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .controls {
+            padding: 20px 40px;
+            background: white;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #2d7a5f;
+            color: white;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .controls button:hover {
+            background: #1a5c42;
+            transform: translateY(-2px);
+        }
+
+        .controls input {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 0.95em;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .sites-container {
+            padding: 20px 40px 40px;
+        }
+
+        .site-section {
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .site-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .site-header:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        }
+
+        .site-header.active {
+            background: linear-gradient(135deg, #2d7a5f 0%, #0a3d2e 100%);
+            color: white;
+        }
+
+        .site-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .site-title h2 {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .site-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .site-badge.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .site-badge.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .site-stats {
+            display: flex;
+            gap: 30px;
+            font-size: 0.95em;
+        }
+
+        .site-header.active .site-stats {
+            opacity: 0.95;
+        }
+
+        .chevron {
+            font-size: 1.5em;
+            transition: transform 0.3s;
+        }
+
+        .site-header.active .chevron {
+            transform: rotate(180deg);
+        }
+
+        .site-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .site-content.active {
+            max-height: 5000px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .table-grid {
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .row-changed {
+            background: #fff3cd;
+        }
+
+        .row-changed:hover {
+            background: #ffeaa7;
+        }
+
+        .row-added {
+            background: #d4edda;
+        }
+
+        .row-added:hover {
+            background: #c3e6cb;
+        }
+
+        .row-removed {
+            background: #f8d7da;
+        }
+
+        .row-removed:hover {
+            background: #f5c6cb;
+        }
+
+        .diff {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .diff.positive {
+            color: #155724;
+            background: #d4edda;
+        }
+
+        .diff.negative {
+            color: #721c24;
+            background: #f8d7da;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-unchanged {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .status-changed {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-added {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-removed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .no-data {
+            padding: 40px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+
+            .site-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ Database Cleanup Report</h1>
+            <p>Comparison between Before and After cleanup operations</p>
+            <p style="font-size: 0.9em; margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                ⚠️ <strong>Important:</strong> Load the DETAILED CSV files with format: "Site", "Table", "Rows"<br>
+                Tables are matched by EXACT NAME between before/after CSVs
+            </p>
+        </div>
+
+        <div class="summary" id="summary">
+            <!-- Summary cards will be generated here -->
+        </div>
+
+        <div class="controls">
+            <label style="padding: 10px 20px; background: #ffcccb; color: #721c24; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                Load Before CSV
+                <input type="file" id="beforeFile" accept=".csv" onchange="loadBeforeCSV(event)" style="display: none;">
+            </label>
+            <label style="padding: 10px 20px; background: #c3e6cb; color: #155724; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                Load After CSV
+                <input type="file" id="afterFile" accept=".csv" onchange="loadAfterCSV(event)" style="display: none;">
+            </label>
+            <button onclick="expandAll()">Expand All</button>
+            <button onclick="collapseAll()">Collapse All</button>
+            <button onclick="showChangedOnly()">Show Changed Only</button>
+            <button onclick="showAll()">Show All</button>
+            <input type="text" id="searchInput" placeholder="Search tables or sites..." oninput="filterTables()">
+        </div>
+
+        <div class="sites-container" id="sitesContainer">
+            <!-- Site sections will be generated here -->
+        </div>
+    </div>
+
+    <script>
+        // Store CSV data
+        let before = {};
+        let after = {};
+        let comparisonData = {};
+
+        // Load CSV from file
+        function loadCSVFile(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvString = e.target.result;
+                const data = parseCSV(csvString);
+                callback(data);
+            };
+            reader.readAsText(file);
+        }
+
+        function loadBeforeCSV(event) {
+            const file = event.target.files[0];
+            if (file) {
+                loadCSVFile(file, function(data) {
+                    // Check if CSV was parsed successfully
+                    if (Object.keys(data).length === 0) {
+                        console.error('Failed to parse Before CSV');
+                        return;
+                    }
+                    before = data;
+                    console.log('Before CSV loaded:', Object.keys(before).length, 'sites,', 
+                        Object.values(before).reduce((sum, site) => sum + Object.keys(site).length, 0), 'tables');
+                    updateReport();
+                    alert('Before CSV loaded successfully!\n' +
+                          Object.keys(before).length + ' sites with ' + 
+                          Object.values(before).reduce((sum, site) => sum + Object.keys(site).length, 0) + ' tables total');
+                });
+            }
+        }
+
+        function loadAfterCSV(event) {
+            const file = event.target.files[0];
+            if (file) {
+                loadCSVFile(file, function(data) {
+                    // Check if CSV was parsed successfully
+                    if (Object.keys(data).length === 0) {
+                        console.error('Failed to parse After CSV');
+                        return;
+                    }
+                    after = data;
+                    console.log('After CSV loaded:', Object.keys(after).length, 'sites,', 
+                        Object.values(after).reduce((sum, site) => sum + Object.keys(site).length, 0), 'tables');
+                    updateReport();
+                    alert('After CSV loaded successfully!\n' +
+                          Object.keys(after).length + ' sites with ' + 
+                          Object.values(after).reduce((sum, site) => sum + Object.keys(site).length, 0) + ' tables total');
+                });
+            }
+        }
+
+        function parseCSV(csvString) {
+            const lines = csvString.trim().split('\n');
+            const data = {};
+            
+            // Check if the CSV has the correct format (with table names in column 2)
+            if (lines.length > 0) {
+                const headerMatch = lines[0].match(/"([^"]*)","([^"]*)","([^"]*)"/);
+                if (headerMatch) {
+                    const [, col1, col2, col3] = headerMatch;
+                    // Detailed format should have "Site", "Table", "Rows" 
+                    // Summary format has "Site Name", "Table Count", "Total Rows"
+                    if (col2.toLowerCase().includes('count') || col2.toLowerCase().includes('total')) {
+                        alert('ERROR: You loaded a SUMMARY CSV file!\n\n' +
+                              'Please load the DETAILED CSV file that contains individual table names.\n' +
+                              'The correct format should have columns: "Site", "Table", "Rows"\n' +
+                              'NOT: "Site Name", "Table Count", "Total Rows"');
+                        return {};
+                    }
+                }
+            }
+            
+            for (let i = 1; i < lines.length; i++) {
+                const match = lines[i].match(/"([^"]*)","([^"]*)","([^"]*)"/);
+                if (match) {
+                    const [, site, table, rows] = match;
+                    if (!data[site]) {
+                        data[site] = {};
+                    }
+                    // Store table data by EXACT table name to ensure proper matching
+                    data[site][table] = parseInt(rows);
+                }
+            }
+            
+            return data;
+        }
+
+        function updateReport() {
+            if (Object.keys(before).length > 0 && Object.keys(after).length > 0) {
+                comparisonData = compareData();
+                generateSummary();
+                renderSites();
+            }
+        }
+
+        function compareData() {
+            const comparison = {};
+            const allSites = new Set([...Object.keys(before), ...Object.keys(after)]);
+            
+            allSites.forEach(site => {
+                comparison[site] = {
+                    tables: {},
+                    totalBefore: 0,
+                    totalAfter: 0,
+                    totalDiff: 0
+                };
+                
+                const beforeTables = before[site] || {};
+                const afterTables = after[site] || {};
+                
+                // Get all unique table names from both before and after
+                // This ensures we match tables by their EXACT NAME, not just row count
+                const allTables = new Set([...Object.keys(beforeTables), ...Object.keys(afterTables)]);
+                
+                allTables.forEach(table => {
+                    // Match tables by exact table name within each site
+                    const beforeCount = beforeTables[table] || 0;
+                    const afterCount = afterTables[table] || 0;
+                    const diff = afterCount - beforeCount;
+                    
+                    comparison[site].tables[table] = {
+                        before: beforeCount,
+                        after: afterCount,
+                        diff: diff,
+                        status: diff === 0 ? 'unchanged' : diff > 0 ? 'added' : 'removed'
+                    };
+                    
+                    comparison[site].totalBefore += beforeCount;
+                    comparison[site].totalAfter += afterCount;
+                });
+                
+                comparison[site].totalDiff = comparison[site].totalAfter - comparison[site].totalBefore;
+            });
+            
+            return comparison;
+        }
+
+        let filterMode = 'all';
+
+        function generateSummary() {
+            const summaryDiv = document.getElementById('summary');
+            
+            let totalRowsBefore = 0;
+            let totalRowsAfter = 0;
+            let sitesWithChanges = 0;
+            let tablesChanged = 0;
+            
+            Object.values(comparisonData).forEach(site => {
+                totalRowsBefore += site.totalBefore;
+                totalRowsAfter += site.totalAfter;
+                
+                if (site.totalDiff !== 0) sitesWithChanges++;
+                
+                Object.values(site.tables).forEach(table => {
+                    if (table.diff !== 0) tablesChanged++;
+                });
+            });
+            
+            const totalDiff = totalRowsAfter - totalRowsBefore;
+            const percentChange = totalRowsBefore > 0 ? ((totalDiff / totalRowsBefore) * 100).toFixed(2) : 0;
+            
+            summaryDiv.innerHTML = `
+                <div class="summary-card neutral">
+                    <h3>Total Sites</h3>
+                    <div class="value">${Object.keys(comparisonData).length}</div>
+                    <div class="label">${sitesWithChanges} with changes</div>
+                </div>
+                <div class="summary-card neutral">
+                    <h3>Before Cleanup</h3>
+                    <div class="value">${totalRowsBefore.toLocaleString()}</div>
+                    <div class="label">total rows</div>
+                </div>
+                <div class="summary-card neutral">
+                    <h3>After Cleanup</h3>
+                    <div class="value">${totalRowsAfter.toLocaleString()}</div>
+                    <div class="label">total rows</div>
+                </div>
+                <div class="summary-card ${totalDiff > 0 ? 'negative' : totalDiff < 0 ? 'positive' : 'neutral'}">
+                    <h3>Total Change</h3>
+                    <div class="value">${totalDiff > 0 ? '+' : ''}${totalDiff.toLocaleString()}</div>
+                    <div class="label">${percentChange > 0 ? '+' : ''}${percentChange}%</div>
+                </div>
+                <div class="summary-card neutral">
+                    <h3>Tables Changed</h3>
+                    <div class="value">${tablesChanged}</div>
+                    <div class="label">across all sites</div>
+                </div>
+            `;
+        }
+
+        function renderSites() {
+            const container = document.getElementById('sitesContainer');
+            container.innerHTML = '';
+            
+            Object.entries(comparisonData).forEach(([siteName, siteData]) => {
+                const hasChanges = siteData.totalDiff !== 0;
+                
+                if (filterMode === 'changed' && !hasChanges) return;
+                
+                const siteSection = document.createElement('div');
+                siteSection.className = 'site-section';
+                
+                const percentChange = siteData.totalBefore > 0 
+                    ? ((siteData.totalDiff / siteData.totalBefore) * 100).toFixed(1) 
+                    : 0;
+                
+                siteSection.innerHTML = `
+                    <div class="site-header" onclick="toggleSite(this)">
+                        <div class="site-title">
+                            <h2>${siteName}</h2>
+                            ${hasChanges ? `<span class="site-badge ${siteData.totalDiff > 0 ? 'negative' : 'positive'}">${siteData.totalDiff > 0 ? '+' : ''}${siteData.totalDiff.toLocaleString()} rows</span>` : ''}
+                        </div>
+                        <div class="site-stats">
+                            <span><strong>Before:</strong> ${siteData.totalBefore.toLocaleString()}</span>
+                            <span><strong>After:</strong> ${siteData.totalAfter.toLocaleString()}</span>
+                            <span><strong>Change:</strong> ${percentChange}%</span>
+                        </div>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="site-content">
+                        <div class="table-grid">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Table Name</th>
+                                        <th>Before</th>
+                                        <th>After</th>
+                                        <th>Difference</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${generateTableRows(siteData.tables)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(siteSection);
+            });
+            
+            if (container.children.length === 0) {
+                container.innerHTML = '<div class="no-data">No sites match the current filter.</div>';
+            }
+        }
+
+        function generateTableRows(tables) {
+            return Object.entries(tables)
+                .sort((a, b) => Math.abs(b[1].diff) - Math.abs(a[1].diff))
+                .map(([tableName, tableData]) => {
+                    let rowClass = '';
+                    if (tableData.diff > 0) rowClass = 'row-added';
+                    else if (tableData.diff < 0) rowClass = 'row-removed';
+                    
+                    let diffClass = '';
+                    if (tableData.diff > 0) diffClass = 'negative';
+                    else if (tableData.diff < 0) diffClass = 'positive';
+                    
+                    let statusClass = 'status-' + tableData.status;
+                    
+                    return `
+                        <tr class="${rowClass}">
+                            <td><strong>${tableName}</strong></td>
+                            <td>${tableData.before.toLocaleString()}</td>
+                            <td>${tableData.after.toLocaleString()}</td>
+                            <td><span class="diff ${diffClass}">${tableData.diff > 0 ? '+' : ''}${tableData.diff.toLocaleString()}</span></td>
+                            <td><span class="status-badge ${statusClass}">${tableData.status}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+        }
+
+        function toggleSite(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            content.classList.toggle('active');
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.site-header').forEach(header => {
+                header.classList.add('active');
+                header.nextElementSibling.classList.add('active');
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.site-header').forEach(header => {
+                header.classList.remove('active');
+                header.nextElementSibling.classList.remove('active');
+            });
+        }
+
+        function showChangedOnly() {
+            filterMode = 'changed';
+            renderSites();
+        }
+
+        function showAll() {
+            filterMode = 'all';
+            renderSites();
+        }
+
+        function filterTables() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sections = document.querySelectorAll('.site-section');
+            
+            sections.forEach(section => {
+                const siteName = section.querySelector('.site-title h2').textContent.toLowerCase();
+                const tableRows = section.querySelectorAll('tbody tr');
+                let siteMatches = siteName.includes(searchTerm);
+                let hasVisibleTables = false;
+                
+                tableRows.forEach(row => {
+                    const tableName = row.querySelector('td:first-child').textContent.toLowerCase();
+                    const matches = tableName.includes(searchTerm) || siteMatches;
+                    row.style.display = matches ? '' : 'none';
+                    if (matches) hasVisibleTables = true;
+                });
+                
+                section.style.display = (siteMatches || hasVisibleTables) ? '' : 'none';
+            });
+        }
+
+        // Initialize the report (will show empty state until files are loaded)
+        generateSummary();
+        renderSites();
+    </script>
+</body>
+</html>

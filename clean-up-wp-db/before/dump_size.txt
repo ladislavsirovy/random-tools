@@ -1,0 +1,5 @@
+-rw-r--r--  1 root    root     5.8G Jan 29 10:29 20260129-www_loxone_com.sql
+sirovla@webshop:/var/www/vhosts/db_dump$ du -b 20260129-www_loxone_com.sql 
+6125614380	20260129-www_loxone_com.sql
+sirovla@webshop:/var/www/vhosts/db_dump$ 
+
