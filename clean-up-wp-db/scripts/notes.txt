@@ -16,6 +16,14 @@ source /path/to/wp_cleanup_machine_optimized.sql
 sudo mysqldump -u root -p www_loxone_com > db_dump_stg_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 
+sudo mysqldump -u root -p www_loxone_com > db_dump_prd_$(date +%Y-%m-%d_%H-%M-%S).sql
+
+
 mysql -u root -p www_loxone_com < cleaner.sql
 mysql -u root -p www_loxone_com < cleaner.sql
 
+
+mysqlcheck -u root -p www_loxone_com
+
+
+mysqlanalyze -u root -p www_loxone_com
