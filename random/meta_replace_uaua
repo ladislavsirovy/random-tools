@@ -1,0 +1,15 @@
+START TRANSACTION;
+
+SELECT COUNT(*) AS rows_to_update
+FROM wp_postmeta
+WHERE meta_value LIKE '%uaua%';
+
+UPDATE wp_postmeta
+SET meta_value = REPLACE(meta_value, 'uaua', 'ukua')
+WHERE meta_value LIKE '%uaua%';
+
+SELECT COUNT(*) AS rows_remaining
+FROM wp_postmeta
+WHERE meta_value LIKE '%uaua%';
+
+COMMIT;
